@@ -1,5 +1,7 @@
 import os
 
+BUFFER = 1024
+
 # Splits a file using the dsplit mechanism
 def dsplit(fromfile, todir = os.getcwd(), offset = 0, limit = None, chunksize = 1024):
     if not os.path.exists(todir):                  # caller handles errors
@@ -14,20 +16,27 @@ def dsplit(fromfile, todir = os.getcwd(), offset = 0, limit = None, chunksize = 
             cont = False
             read = limit or (filesize - offset)
         tofile = os.path.join(todir, ('%s.part%d' % (original_file, partnum)))
-        chunk  = __read_write_block(fromfile, read, tofile, offset)
+        __read_write_block(fromfile, read, tofile, offset)
         partnum += 1
         read    += chunksize
 
 #### Private methods
 
-def __read_write_block(fromfile, n, tofile, offset = 0):
+def __read_write_block(fromfile, size, tofile, offset = 0):
     stream = open(fromfile, 'rb')
+    out = open(tofile, 'wb')
     stream.seek(offset, 1)
-    chunk = stream.read(n)
-    stream.close()
-    if not chunk: return
 
-    fileobj = open(tofile, 'wb')
-    fileobj.write(chunk)
-    fileobj.close()
-    return fileobj
+    bytesread = 0
+    while bytesread < size:
+        if bytesread + BUFFER > size:
+            # Read will exceed limit, limit the number of bytes to read
+            n = size - bytesread
+        else:
+            # Read the maximum
+            n = BUFFER
+        chunk = stream.read(n)
+        bytesread += len(chunk)
+        out.write(chunk)
+    stream.close()
+    out.close()
