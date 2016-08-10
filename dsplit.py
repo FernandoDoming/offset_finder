@@ -27,6 +27,7 @@ if __name__ == "__main__":
     limit = args.limit or None
     outdir = args.write or os.getcwd()
 
+    to_divide = limit or os.path.getsize(args.file)
     logging.info("%sdsplit: %s%d parts will be generated in %s" %
-                    (colors.OKGREEN, colors.ENDC, math.ceil(os.path.getsize(args.file) / step), outdir))
+                    (colors.OKGREEN, colors.ENDC, math.ceil(to_divide / step), outdir))
     splitter.dsplit(args.file, todir=outdir, chunksize=step, offset=offset, limit=limit)

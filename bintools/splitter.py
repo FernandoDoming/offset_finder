@@ -9,7 +9,7 @@ def dsplit(fromfile, todir = os.getcwd(), offset = 0, limit = None, chunksize = 
 
     original_file = os.path.basename(fromfile)
     filesize = os.path.getsize(fromfile)
-    cont = True; partnum = 1; read = chunksize
+    cont = True; partnum = 0; read = chunksize
     while cont:
         if read > (filesize - offset) or (read > limit and limit is not None):
             # Do the last read if conditions met
