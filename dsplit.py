@@ -14,5 +14,7 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--limit", type=int, help="limit the number of bytes read")
     args = parser.parse_args()
 
-    step = int(args.step) if args.step else 1024
-    splitter.dsplit(args.file, os.getcwd(), step)
+    step = args.step or 1024
+    offset = args.offset or 0
+    limit = args.limit or None
+    splitter.dsplit(args.file, todir=os.getcwd(), chunksize=step, offset=offset, limit=limit)

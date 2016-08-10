@@ -7,22 +7,22 @@ def dsplit(fromfile, todir = os.getcwd(), offset = 0, limit = None, chunksize = 
 
     original_file = os.path.basename(fromfile)
     filesize = os.path.getsize(fromfile)
-    cont = True
-    partnum = 0
+    cont = True; partnum = 1; read = chunksize
     while cont:
-        if chunksize > filesize:
-            # Do 1 more read if chunksize > filesize
+        if read > (filesize - offset) or (read > limit and limit is not None):
+            # Do the last read if conditions met
             cont = False
-            chunksize = filesize
-        partnum  = partnum + 1
+            read = limit or (filesize - offset)
         tofile = os.path.join(todir, ('%s.part%d' % (original_file, partnum)))
-        chunk = __read_write_block(fromfile, chunksize, tofile)
-        chunksize *= 2
+        chunk  = __read_write_block(fromfile, read, tofile, offset)
+        partnum += 1
+        read    += chunksize
 
 #### Private methods
 
 def __read_write_block(fromfile, n, tofile, offset = 0):
     stream = open(fromfile, 'rb')
+    stream.seek(offset, 1)
     chunk = stream.read(n)
     stream.close()
     if not chunk: return
