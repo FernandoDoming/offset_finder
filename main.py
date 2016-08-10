@@ -1,19 +1,18 @@
+#!/usr/bin/env python
+
 import sys
 import os
+import argparse
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))      # Add lib to python path
 from bintools import splitter
 
-def print_usage():
-    print("Usage: %s file step [offset]" % (sys.argv[0]))
-
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print_usage()
-        sys.exit(1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", help="the file to analyze")
+    parser.add_argument("-s", "--step", type=int, help="step size. (default 1Kb)")
+    parser.add_argument("-o", "--offset", type=int, help="offset for the file, expressed in bytes")
+    parser.add_argument("-l", "--limit", type=int, help="limit the number of bytes read")
+    args = parser.parse_args()
 
-    filename = sys.argv[1]
-    step = int(sys.argv[2])
-    offset = int(sys.argv[3]) if len(sys.argv) >= 4 else 0
-
-    splitter.dsplit(filename, os.getcwd(), step)
+    step = int(args.step) if args.step else 1024
+    splitter.dsplit(args.file, os.getcwd(), step)
