@@ -23,31 +23,39 @@ def dsplit(fromfile, todir=os.getcwd(), offset=0, limit=None, chunksize=1024):
         partnum += 1
         read    += chunksize
 
-def avfuck(fromfile, todir=os.getcwd(), chunksize=1024):
+def avfuck(fromfile, todir=os.getcwd(), coversize=1024, filling=0x90, offset=0, limit=None):
     """
     Covers sections of a file using the AVfuck method
+
+    Keyword arguments:
+    fromfile -- file to cover
+    todir -- output directory (default os.getcwd())
+    coversize -- number of bytes to cover in each iteration (default 1024)
+    filling -- byte value to cover with (default 0x90)
+    offset -- begin reading fromfile at said offset (default 0)
+    limit -- do not read more than these bytes from fromfile (default None)
     """
+
     if not os.path.exists(todir):                  # caller handles errors
         os.mkdir(todir)                            # make dir, read/write parts
 
     original_file = os.path.basename(fromfile)
     filesize = os.path.getsize(fromfile)
-    cont = True; partnum = 0; read = chunksize; offset = 0
-    while cont:
-        if read > filesize - offset:
-            # Do the last read if conditions met
-            cont = False
-            read = filesize - offset
+    if coversize > limit and limit is not None: coversize = limit
+    max_size = limit or filesize - offset
+
+    cont = True; partnum = 0; read = max_size; cover_offset = 0
+    while cover_offset < max_size:
         tofile = os.path.join(todir, ('%s.fuck%d' % (original_file, partnum)))
-        shutil.copyfile(fromfile, tofile)
-        __cover_block(tofile, read, offset)
-        offset += read
+        __read_write_block(fromfile, size=read, tofile=tofile, offset=offset)
+        __cover_block(tofile, size=coversize, offset=cover_offset, filling=filling)
+        cover_offset += coversize
         partnum += 1
 
 #### Private methods
 
 def __cover_block(fromfile, size, offset, filling=0x90):
-    stream = open(fromfile, 'ab+')
+    stream = open(fromfile, 'rb+')
     stream.seek(offset, 1)
     cover = bytearray([filling] * size)
     stream.write(cover)
