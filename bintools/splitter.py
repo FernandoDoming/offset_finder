@@ -1,9 +1,12 @@
 import os
 import shutil
+import math
+import logging
+from colors import colors
 
 BUFFER = 1024
 
-def dsplit(fromfile, todir=os.getcwd(), offset=0, limit=None, chunksize=1024):
+def dsplit(fromfile, todir=os.getcwd(), offset=0, limit=None, chunksize=1024, verbose=False):
     """
     Splits a file using the dsplit mechanism
     """
@@ -12,12 +15,18 @@ def dsplit(fromfile, todir=os.getcwd(), offset=0, limit=None, chunksize=1024):
 
     original_file = os.path.basename(fromfile)
     filesize = os.path.getsize(fromfile)
+    if limit is not None: to_divide = min(limit, filesize - offset)
+    else: to_divide = filesize - offset
+
+    if verbose:     logging.info("%sdsplit: %s%d parts will be generated in %s" %
+                    (colors.OKGREEN, colors.ENDC, math.ceil(to_divide / chunksize), todir))
+
     cont = True; partnum = 0; read = chunksize
     while cont:
-        if read > (filesize - offset) or (read > limit and limit is not None):
+        if read > to_divide:
             # Do the last read if conditions met
             cont = False
-            read = limit or (filesize - offset)
+            read = to_divide
         tofile = os.path.join(todir, ('%s.part%d' % (original_file, partnum)))
         __read_write_block(fromfile, read, tofile, offset)
         partnum += 1
