@@ -23,3 +23,7 @@ if __name__ == "__main__":
     step = args.step or 1024
     dsplit_dir = os.getcwd() + '/offsets'
     splitter.dsplit(args.file, todir=dsplit_dir, chunksize=step, verbose=args.verbose)
+
+    base_dir = os.path.realpath(__file__)
+    multi_av = multiav.CMultiAV(base_dir + '/multiav.cfg')
+    ret = multi_av.scan(dsplit_dir, multiav.AV_SPEED_MEDIUM)
