@@ -6,7 +6,7 @@ from colors import colors
 
 BUFFER = 1024
 
-def dsplit(fromfile, todir=os.getcwd(), offset=0, limit=None, chunksize=1024, verbose=False):
+def dsplit(fromfile, todir=os.getcwd(), offset=0, limit=None, chunksize=1024, fill=False, verbose=False):
     """
     Splits a file using the dsplit mechanism
     """
@@ -29,6 +29,9 @@ def dsplit(fromfile, todir=os.getcwd(), offset=0, limit=None, chunksize=1024, ve
             read = to_divide
         tofile = os.path.join(todir, ('%s.part%d' % (original_file, partnum)))
         __read_write_block(fromfile, read, tofile, offset)
+        if fill:
+            cover = filesize - read
+            __cover_block(tofile, size=cover, offset=read, filling=0x00)
         partnum += 1
         read    += chunksize
 
