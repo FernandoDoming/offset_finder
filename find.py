@@ -58,7 +58,9 @@ if __name__ == "__main__":
 
   offset = 0; limit = None; i = 0
   while step > precision:
-    logging.info("Beginning iteration %d B. Offset: %d B, step: %d B" % (i, offset, step))
+    logging.info("Beginning iteration %d. Offset: %d B, step: %d B" % (i, offset, step))
+    if args.truncate: starting_offset = offset
+    else: starting_offset = 0
 
     # Clean working directory
     if os.path.isdir(dsplit_dir): shutil.rmtree(dsplit_dir)
@@ -73,13 +75,13 @@ if __name__ == "__main__":
       logging.info("%s found %d results" % (engine, len(parts)))
 
       detected_parts = scan_parts(parts)
-      min_part = min(detected_parts)
       if not detected_parts:
         logging.warn("No detected parts by %s. Skipping..." % (engine))
         break     # TODO: should be continue
 
+      min_part = min(detected_parts)
       logging.info("First detected part by %s is %d" % (engine, min_part))
-      offset = offset + min_part * step
+      offset = starting_offset + min_part * step
       limit = step * 2
       logging.info("Signature for %s starts at offset %d - %d, error: %d"
                     % (engine, offset, offset + step, step))
