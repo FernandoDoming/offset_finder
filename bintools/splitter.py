@@ -42,7 +42,7 @@ def dsplit(fromfile, todir=os.getcwd(), offset=0, limit=None, chunksize=1024, fi
         partnum += 1
         read    += chunksize
 
-def avfuck(fromfile, todir=os.getcwd(), coversize=1024, filling=0x90, offset=0, limit=None):
+def avfuck(fromfile, todir=os.getcwd(), coversize=1024, filling=0x90, offset=0, limit=None, coffset=0):
     """
     Covers sections of a file using the AVfuck method
 
@@ -63,7 +63,7 @@ def avfuck(fromfile, todir=os.getcwd(), coversize=1024, filling=0x90, offset=0, 
     if coversize > limit and limit is not None: coversize = limit
     max_size = limit or filesize - offset
 
-    cont = True; partnum = 0; read = max_size; cover_offset = 0
+    cont = True; partnum = 0; read = max_size; cover_offset = coffset
     while cover_offset < max_size:
         tofile = os.path.join(todir, ('%s.fuck%d' % (original_file, partnum)))
         __read_write_block(fromfile, size=read, tofile=tofile, offset=offset)

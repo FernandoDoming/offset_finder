@@ -48,8 +48,8 @@ if __name__ == "__main__":
   logging.basicConfig(level=log_level,
                       format='%(levelname)s: %(message)s')
 
-  base_dir      = os.path.dirname(os.path.realpath(__file__))
-  multi_av      = multiav.core.CMultiAV( os.path.join(base_dir, 'multiav.cfg') )
+  base_dir = os.path.dirname(os.path.realpath(__file__))
+  multi_av = multiav.core.CMultiAV( os.path.join(base_dir, 'multiav.cfg') )
 
   step       = args.step or 1024
   precision  = args.precision or 1000
