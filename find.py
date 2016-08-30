@@ -35,7 +35,7 @@ if __name__ == "__main__":
   parser.add_argument("-s", "--step", type=int, help="initial step size for dsplit. (default 1Kb)")
   parser.add_argument("-i", "--iter", type=int, help="Maximum iterations. (default None)")
   parser.add_argument("-p", "--precision", type=int, help="Precision for the signature location " +
-                                                          "(absolute error in bytes). (default 100)")
+                                                          "(absolute error in bytes). (default 1000)")
   parser.add_argument("-v", "--verbose", action='store_true', help="Verbose output")
   parser.add_argument("-t", "--truncate", action='store_true', help="Truncate instead of filling with zeros. " +
                                                                     "Filling with zeros usually works better " +
@@ -52,13 +52,13 @@ if __name__ == "__main__":
   multi_av      = multiav.core.CMultiAV( os.path.join(base_dir, 'multiav.cfg') )
 
   step       = args.step or 1024
-  precision  = args.precision or 100
+  precision  = args.precision or 1000
   dsplit_dir = os.path.join(os.getcwd(), 'offsets')
   max_iter   = args.iter or float('inf')
 
   offset = 0; limit = None; i = 0
   while step > precision:
-    logging.info("Beginning iteration %d. Offset: %d, step: %d" % (i, offset, step))
+    logging.info("Beginning iteration %d B. Offset: %d B, step: %d B" % (i, offset, step))
 
     # Clean working directory
     if os.path.isdir(dsplit_dir): shutil.rmtree(dsplit_dir)
@@ -74,8 +74,12 @@ if __name__ == "__main__":
 
       detected_parts = scan_parts(parts)
       min_part = min(detected_parts)
+      if not detected_parts:
+        logging.warn("No detected parts by %s. Skipping..." % (engine))
+        break     # TODO: should be continue
+
       logging.info("First detected part by %s is %d" % (engine, min_part))
-      offset = min_part * step
+      offset = offset + min_part * step
       limit = step * 2
       logging.info("Signature for %s starts at offset %d - %d, error: %d"
                     % (engine, offset, offset + step, step))
