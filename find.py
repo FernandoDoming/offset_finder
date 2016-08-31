@@ -15,7 +15,7 @@ from colors import colors
 
 def scan_parts(parts):
   detected_parts = []
-  parts_pattern = re.compile('.+part(\d+)$')
+  parts_pattern = re.compile('.+(?:part|fuck)(\d+)$')
 
   for part, result in parts.iteritems():
     if result[0] != 'FOUND': continue
@@ -27,9 +27,10 @@ def scan_parts(parts):
 
   return detected_parts
 
-################   main   ################
+def missing_elements(L, start, end):
+  return sorted(set(xrange(start, end + 1)).difference(L))
 
-if __name__ == "__main__":
+def get_args():
   parser = argparse.ArgumentParser()
   parser.add_argument("file", help="the file to analyze")
   parser.add_argument("-s", "--step", type=int, help="initial step size for dsplit. (default 1Kb)")
@@ -40,8 +41,13 @@ if __name__ == "__main__":
   parser.add_argument("-t", "--truncate", action='store_true', help="Truncate instead of filling with zeros. " +
                                                                     "Filling with zeros usually works better " +
                                                                     "but uses more space")
-  args = parser.parse_args()
+  return parser.parse_args()
 
+################   main   ################
+
+if __name__ == "__main__":
+
+  args = get_args()
   if args.verbose: log_level = logging.INFO
   else:            log_level = logging.WARN
 
@@ -54,11 +60,13 @@ if __name__ == "__main__":
   step       = args.step or 1024
   precision  = args.precision or 1000
   dsplit_dir = os.path.join(os.getcwd(), 'offsets')
+  avfuck_dir = os.path.join(os.getcwd(), 'avfuck')
   max_iter   = args.iter or float('inf')
 
+  # Dsplit iterations to obtain signature start offset
   offset = 0; limit = None; i = 0
   while step > precision:
-    logging.info("Beginning iteration %d. Offset: %d B, step: %d B" % (i, offset, step))
+    logging.info("DSPLIT: Beginning iteration %d. Offset: %d B, step: %d B" % (i, offset, step))
     if args.truncate: starting_offset = offset
     else: starting_offset = 0
 
@@ -98,5 +106,24 @@ if __name__ == "__main__":
     logging.info("------------------------------------------------------")
     # /while
 
-  logging.info("Signature start located to offset %d - %d, error: %d"
+  print("[*] Signature start located to offset %d - %d, error: %d"
                 % (offset, offset + step, step))
+  # Avfuck
+  logging.info("------------------------------------------------------")
+  logging.info("Starting AvFucker method...")
+
+  coversize = step / 20
+  splitter.avfuck(args.file, todir=avfuck_dir, coversize=coversize, coffset=offset, limit=offset+step*2)
+  scans = multi_av.scan(avfuck_dir, multiav.core.AV_SPEED_MEDIUM)
+
+  for engine, parts in scans.iteritems():
+    logging.info("%s found %d results" % (engine, len(parts)))
+    detected_parts = scan_parts(parts)
+    undetected_parts = missing_elements(detected_parts, start=0, end=40)
+    logging.info("Undetected parts: %s" % (str(undetected_parts).strip('[]')))
+
+    for part in undetected_parts:
+      breaking_offset = offset + int(part) * coversize
+      print("[*] Modifing offset %d - %d breaks the signature" % (breaking_offset, breaking_offset+coversize))
+    break
+
