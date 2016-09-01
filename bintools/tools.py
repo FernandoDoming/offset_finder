@@ -8,7 +8,11 @@ def dump(filename, start, end):
 
 def hexdump(filename, start, end):
   data = dump(filename, start, end)
+  return format(ord(byte), 'x')
+
+def print_dump(data, addr=None):
   shex = ""
   for byte in data:
     shex += format(ord(byte), 'x') + " "
-  return start + ": " + shex
+  if addr: shex = addr + ": " + shex
+  print(shex)

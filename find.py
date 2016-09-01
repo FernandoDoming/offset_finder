@@ -160,6 +160,7 @@ if __name__ == "__main__":
       print("[*] Modifing offset %d - %d breaks the signature" % (breaking_offset, breaking_offset+coversize))
 
       should_dump = query_yes_no("Do you want to dump the contents at that range?", default="yes")
-      if should_dump: print( tools.hexdump(args.file, start=breaking_offset, end=breaking_offset+coversize) )
+      if should_dump:
+        tools.print_dump(tools.dump(args.file, start=breaking_offset, end=breaking_offset+coversize))
     break
 
