@@ -46,20 +46,6 @@ def query_yes_no(question, default="yes"):
             sys.stdout.write("Please respond with 'yes' or 'no' "
                              "(or 'y' or 'n').\n")
 
-def scan_parts(parts):
-  detected_parts = []
-  parts_pattern = re.compile('.+(?:part|fuck)(\d+)$')
-
-  for part, result in parts.iteritems():
-    if result[0] != 'FOUND': continue
-
-    matched = parts_pattern.match(part)
-    part_n = int(matched.group(1))
-    detected_parts.append(part_n)
-    logging.info("Part %d detected as %s" % (part_n, result[1]))
-
-  return detected_parts
-
 def missing_elements(L, start, end):
   return sorted(set(xrange(start, end + 1)).difference(L))
 
@@ -96,62 +82,20 @@ if __name__ == "__main__":
   avfuck_dir = os.path.join(os.getcwd(), 'avfuck')
   max_iter   = args.iter or float('inf')
 
-  # Dsplit iterations to obtain signature start offset
-  offset = 0; limit = None; i = 0
-  while step > precision:
-    logging.info("DSPLIT: Beginning iteration %d. Offset: %d B, step: %d B" % (i, offset, step))
-    if args.truncate: starting_offset = offset
-    else: starting_offset = 0
-
-    # Clean working directory
-    if os.path.isdir(dsplit_dir): shutil.rmtree(dsplit_dir)
-    # Generate parts
-    splitter.dsplit(args.file, todir=dsplit_dir, chunksize=step,
-                    offset=offset, limit=limit, fill=not args.truncate)
-
-    logging.info("Beginning scanning at %s..." % (dsplit_dir))
-    scans = multi_av.scan(dsplit_dir, multiav.core.AV_SPEED_MEDIUM)
-
-    for engine, parts in scans.iteritems():
-      logging.info("%s found %d results" % (engine, len(parts)))
-
-      detected_parts = scan_parts(parts)
-      if not detected_parts:
-        logging.warn("No detected parts by %s. Skipping..." % (engine))
-        break     # TODO: should be continue
-
-      min_part = min(detected_parts)
-      logging.info("First detected part by %s is %d" % (engine, min_part))
-      offset = starting_offset + min_part * step
-      limit = step * 2
-      logging.info("Signature for %s starts at offset %d - %d, error: %d"
-                    % (engine, offset, offset + step, step))
-      # TODO: Support multiple engines
-      break   # Right now only one engine at a time
-      # /for
-
-    if i >= max_iter:
-      logging.warn("Reached maximum iterations (%d). Breaking..." % (max_iter))
-      break
-
-    step /= 2
-    i += 1
-    logging.info("------------------------------------------------------")
-    # /while
-
+  offset, err = tools.find_start_offset(args.file, precision=precision, step=step,
+                      truncate=args.truncate, dsplit_dir=dsplit_dir, max_i=max_iter)
   print("[*] Signature start located to offset %d - %d, error: %d"
-                % (offset, offset + step, step))
-  # Avfuck
-  logging.info("------------------------------------------------------")
-  logging.info("Starting AvFucker method...")
+        % (offset, offset + err, err))
 
-  coversize = step / 20
-  splitter.avfuck(args.file, todir=avfuck_dir, coversize=coversize, coffset=offset, limit=offset+step*2)
+  # Avfuck
+  coversize = err / 20
+  logging.info("Starting AvFucker method. Offset: %d, Coversize: %d" % (offset, coversize))
+  splitter.avfuck(args.file, todir=avfuck_dir, coversize=coversize, coffset=offset, limit=offset+err*2)
   scans = multi_av.scan(avfuck_dir, multiav.core.AV_SPEED_MEDIUM)
 
   for engine, parts in scans.iteritems():
     logging.info("%s found %d results" % (engine, len(parts)))
-    detected_parts = scan_parts(parts)
+    detected_parts = tools.scan_parts(parts)
     undetected_parts = missing_elements(detected_parts, start=0, end=40)
     logging.info("Undetected parts: %s" % (str(undetected_parts).strip('[]')))
 
