@@ -71,7 +71,7 @@ def lowest_detected_part(scans):
 def find_start_offset(file, precision, step, truncate, dsplit_dir, max_i=float('inf')):
   # Dsplit iterations to obtain signature start offset
   offset = 0; limit = None; i = 0
-  while step > precision:
+  while True:
     logging.info("DSPLIT: Beginning iteration %d. Offset: %d B, step: %d B" % (i, offset, step))
     if truncate: starting_offset = offset
     else: starting_offset = 0
@@ -94,22 +94,29 @@ def find_start_offset(file, precision, step, truncate, dsplit_dir, max_i=float('
       logging.warn("Reached maximum iterations (%d). Breaking..." % (max_i))
       break
 
+    if precision > step: break
     step /= 2
     i    += 1
   return offset, step
 
 
-def find_breaking_offset(file, avfuck_dir, coversize, offset, step):
-  splitter.avfuck(file, todir=avfuck_dir, coversize=coversize, coffset=offset, limit=offset+step*2)
-  scans = multi_av.scan(avfuck_dir, multiav.core.AV_SPEED_MEDIUM)
+def find_breaking_offset(file, avfuck_dir, coversize, offset, step, precision):
+  offsets = []
+  while True:
+    total_parts = splitter.avfuck(file, todir=avfuck_dir, coversize=coversize, coffset=offset, limit=offset+step*2)
+    scans = multi_av.scan(avfuck_dir, multiav.core.AV_SPEED_MEDIUM)
 
-  for engine, parts in scans.iteritems():
-    logging.info("%s found %d results" % (engine, len(parts)))
-    detected_parts = scan_parts(parts)
-    undetected_parts = missing_elements(detected_parts, start=0, end=40)
-    logging.info("Undetected parts: %s" % (str(undetected_parts).strip('[]')))
+    for engine, parts in scans.iteritems():
+      logging.info("%s found %d results" % (engine, len(parts)))
+      detected_parts = scan_parts(parts)
+      undetected_parts = missing_elements(detected_parts, start=0, end=total_parts)
+      logging.info("Undetected parts: %s" % (str(undetected_parts).strip('[]')))
 
-    offsets = []
-    for part in undetected_parts:
-      offsets.append(offset + int(part) * coversize)
-    return offsets, coversize   # TODO: Multiple engines
+      for part in undetected_parts:
+        offsets.append(offset + int(part) * coversize)
+      break    # TODO: Multiple engines
+      # end for
+    if precision >= coversize: break
+    coversize /= 2
+    # end while
+  return offsets, coversize

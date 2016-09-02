@@ -24,9 +24,10 @@ def dsplit(fromfile, todir=os.getcwd(), offset=0, limit=None, chunksize=1024, fi
     # calculate sizes to operate with
     if limit is not None: to_divide = min(limit, filesize - offset)
     else: to_divide = filesize - offset
+    part_count = math.ceil(to_divide / chunksize)
 
     logging.info("%sdsplit: %s%d parts will be generated in %s" %
-        (colors.OKGREEN, colors.ENDC, math.ceil(to_divide / chunksize), todir))
+        (colors.OKGREEN, colors.ENDC, part_count, todir))
 
     cont = True; partnum = 0; read = chunksize
     while cont:
@@ -41,6 +42,7 @@ def dsplit(fromfile, todir=os.getcwd(), offset=0, limit=None, chunksize=1024, fi
             __cover_block(tofile, size=cover, offset=read, filling=0x00)
         partnum += 1
         read    += chunksize
+    return part_count
 
 def avfuck(fromfile, todir=os.getcwd(), coversize=1024, filling=0x90, offset=0, limit=None, coffset=0):
     """
@@ -62,14 +64,19 @@ def avfuck(fromfile, todir=os.getcwd(), coversize=1024, filling=0x90, offset=0, 
     filesize = os.path.getsize(fromfile)
     if coversize > limit and limit is not None: coversize = limit
     max_size = limit or filesize - offset
+    part_count = int(math.ceil((max_size - coffset) / coversize))
 
-    cont = True; partnum = 0; read = max_size; cover_offset = coffset
-    while cover_offset < max_size:
+    logging.info("%savfucker:%s %d parts will be generated in %s" %
+        (colors.OKGREEN, colors.ENDC, part_count, todir))
+
+    cont = True; partnum = 0; read = max_size
+    while coffset < max_size:
         tofile = os.path.join(todir, ('%s.fuck%d' % (original_file, partnum)))
         __read_write_block(fromfile, size=read, tofile=tofile, offset=offset)
-        __cover_block(tofile, size=coversize, offset=cover_offset, filling=filling)
-        cover_offset += coversize
+        __cover_block(tofile, size=coversize, offset=coffset, filling=filling)
+        coffset += coversize
         partnum += 1
+    return part_count
 
 #### Private methods
 

@@ -51,8 +51,10 @@ def get_args():
   parser.add_argument("file", help="the file to analyze")
   parser.add_argument("-s", "--step", type=int, help="initial step size for dsplit. (default 1Kb)")
   parser.add_argument("-i", "--iter", type=int, help="Maximum iterations. (default None)")
-  parser.add_argument("-p", "--precision", type=int, help="Precision for the signature location " +
-                                                          "(absolute error in bytes). (default 1000)")
+  parser.add_argument("-dp", "--dprecision", type=int, help="Precision for the dsplit method " +
+                                                          "(absolute error in bytes for signature start offset). (default 1000)")
+  parser.add_argument("-ap", "--aprecision", type=int, help="Precision for the avfucker method " +
+                                                          "(default 10)")
   parser.add_argument("-v", "--verbose", action='store_true', help="Verbose output")
   parser.add_argument("-t", "--truncate", action='store_true', help="Truncate instead of filling with zeros. " +
                                                                     "Filling with zeros usually works better " +
@@ -73,22 +75,22 @@ if __name__ == "__main__":
   base_dir = os.path.dirname(os.path.realpath(__file__))
   multi_av = multiav.core.CMultiAV( os.path.join(base_dir, 'multiav.cfg') )
 
-  step       = args.step or 1024
-  precision  = args.precision or 1000
-  dsplit_dir = os.path.join(os.getcwd(), 'offsets')
-  avfuck_dir = os.path.join(os.getcwd(), 'avfuck')
-  max_iter   = args.iter or float('inf')
+  step        = args.step or 1024
+  dprecision  = args.dprecision or 1000
+  aprecision  = args.aprecision or 10
+  dsplit_dir  = os.path.join(os.getcwd(), 'offsets')
+  avfuck_dir  = os.path.join(os.getcwd(), 'avfuck')
+  max_iter    = args.iter or float('inf')
 
-  offset, err = tools.find_start_offset(args.file, precision=precision, step=step,
+  offset, err = tools.find_start_offset(args.file, precision=dprecision, step=step,
                       truncate=args.truncate, dsplit_dir=dsplit_dir, max_i=max_iter)
   print("[*] Signature start located to offset %d - %d, error: %d"
         % (offset, offset + err, err))
 
-  # Avfuck
-  coversize = err / 20
+  coversize = aprecision
   logging.info("Starting AvFucker method. Offset: %d, Coversize: %d" % (offset, coversize))
   breaking_offsets, precision = tools.find_breaking_offset(args.file, avfuck_dir=avfuck_dir, coversize=coversize,
-                                                          offset=offset, step=err)
+                                                          offset=offset, step=err, precision=aprecision)
 
   for offset in breaking_offsets:
     print("[*] Modifing offset %d - %d breaks the signature" % (offset, offset + coversize))
