@@ -20,6 +20,10 @@ def dump(filename, start, end):
   return data
 
 
+def missing_elements(L, start, end):
+  return sorted(set(xrange(start, end + 1)).difference(L))
+
+
 def hexdump(filename, start, end):
   data = dump(filename, start, end)
   return format(ord(byte), 'x')
@@ -93,3 +97,19 @@ def find_start_offset(file, precision, step, truncate, dsplit_dir, max_i=float('
     step /= 2
     i    += 1
   return offset, step
+
+
+def find_breaking_offset(file, avfuck_dir, coversize, offset, step):
+  splitter.avfuck(file, todir=avfuck_dir, coversize=coversize, coffset=offset, limit=offset+step*2)
+  scans = multi_av.scan(avfuck_dir, multiav.core.AV_SPEED_MEDIUM)
+
+  for engine, parts in scans.iteritems():
+    logging.info("%s found %d results" % (engine, len(parts)))
+    detected_parts = scan_parts(parts)
+    undetected_parts = missing_elements(detected_parts, start=0, end=40)
+    logging.info("Undetected parts: %s" % (str(undetected_parts).strip('[]')))
+
+    offsets = []
+    for part in undetected_parts:
+      offsets.append(offset + int(part) * coversize)
+    return offsets, coversize   # TODO: Multiple engines

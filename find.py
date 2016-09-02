@@ -46,9 +46,6 @@ def query_yes_no(question, default="yes"):
             sys.stdout.write("Please respond with 'yes' or 'no' "
                              "(or 'y' or 'n').\n")
 
-def missing_elements(L, start, end):
-  return sorted(set(xrange(start, end + 1)).difference(L))
-
 def get_args():
   parser = argparse.ArgumentParser()
   parser.add_argument("file", help="the file to analyze")
@@ -90,21 +87,12 @@ if __name__ == "__main__":
   # Avfuck
   coversize = err / 20
   logging.info("Starting AvFucker method. Offset: %d, Coversize: %d" % (offset, coversize))
-  splitter.avfuck(args.file, todir=avfuck_dir, coversize=coversize, coffset=offset, limit=offset+err*2)
-  scans = multi_av.scan(avfuck_dir, multiav.core.AV_SPEED_MEDIUM)
+  breaking_offsets, precision = tools.find_breaking_offset(args.file, avfuck_dir=avfuck_dir, coversize=coversize,
+                                                          offset=offset, step=err)
 
-  for engine, parts in scans.iteritems():
-    logging.info("%s found %d results" % (engine, len(parts)))
-    detected_parts = tools.scan_parts(parts)
-    undetected_parts = missing_elements(detected_parts, start=0, end=40)
-    logging.info("Undetected parts: %s" % (str(undetected_parts).strip('[]')))
-
-    for part in undetected_parts:
-      breaking_offset = offset + int(part) * coversize
-      print("[*] Modifing offset %d - %d breaks the signature" % (breaking_offset, breaking_offset+coversize))
-
-      should_dump = query_yes_no("Do you want to dump the contents at that range?", default="yes")
-      if should_dump:
-        tools.print_dump(tools.dump(args.file, start=breaking_offset, end=breaking_offset+coversize))
-    break
+  for offset in breaking_offsets:
+    print("[*] Modifing offset %d - %d breaks the signature" % (offset, offset + coversize))
+    should_dump = query_yes_no("Do you want to dump the contents at that range?", default="yes")
+    if should_dump:
+      tools.print_dump(tools.dump(args.file, start=offset, end=offset+precision))
 
