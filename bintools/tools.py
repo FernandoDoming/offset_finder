@@ -33,7 +33,7 @@ def print_dump(data, addr=None):
   shex = ""
   for byte in data:
     shex += format(ord(byte), 'x') + " "
-  if addr: shex = addr + ": " + shex
+  if addr: shex = str(addr) + ": " + shex
   print(shex)
 
 

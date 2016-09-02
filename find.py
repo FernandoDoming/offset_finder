@@ -65,36 +65,45 @@ def get_args():
 
 if __name__ == "__main__":
 
-  args = get_args()
-  if args.verbose: log_level = logging.INFO
-  else:            log_level = logging.WARN
+  try:
+    args = get_args()
+    if args.verbose: log_level = logging.INFO
+    else:            log_level = logging.WARN
 
-  logging.basicConfig(level=log_level,
-                      format='%(levelname)s: %(message)s')
+    logging.basicConfig(level=log_level,
+                        format='%(levelname)s: %(message)s')
 
-  base_dir = os.path.dirname(os.path.realpath(__file__))
-  multi_av = multiav.core.CMultiAV( os.path.join(base_dir, 'multiav.cfg') )
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    multi_av = multiav.core.CMultiAV( os.path.join(base_dir, 'multiav.cfg') )
 
-  step        = args.step or 1024
-  dprecision  = args.dprecision or 1000
-  aprecision  = args.aprecision or 10
-  dsplit_dir  = os.path.join(os.getcwd(), 'offsets')
-  avfuck_dir  = os.path.join(os.getcwd(), 'avfuck')
-  max_iter    = args.iter or float('inf')
+    step        = args.step or 1024
+    dprecision  = args.dprecision or 1000
+    aprecision  = args.aprecision or 10
+    dsplit_dir  = os.path.join(os.getcwd(), 'offsets')
+    avfuck_dir  = os.path.join(os.getcwd(), 'avfuck')
+    max_iter    = args.iter or float('inf')
 
-  offset, err = tools.find_start_offset(args.file, precision=dprecision, step=step,
-                      truncate=args.truncate, dsplit_dir=dsplit_dir, max_i=max_iter)
-  print("[*] Signature start located to offset %d - %d, error: %d"
-        % (offset, offset + err, err))
+    offset, err = tools.find_start_offset(args.file, precision=dprecision, step=step,
+                        truncate=args.truncate, dsplit_dir=dsplit_dir, max_i=max_iter)
+    print("%s[*] Signature start located to offset %d - %d, error: %d%s"
+          % (colors.OKBLUE, offset, offset + err, err, colors.ENDC))
 
-  coversize = aprecision
-  logging.info("Starting AvFucker method. Offset: %d, Coversize: %d" % (offset, coversize))
-  breaking_offsets, precision = tools.find_breaking_offset(args.file, avfuck_dir=avfuck_dir, coversize=coversize,
-                                                          offset=offset, step=err, precision=aprecision)
+    coversize = aprecision
+    logging.info("Starting AvFucker method. Offset: %d, Coversize: %d" % (offset, coversize))
+    breaking_offsets, precision = tools.find_breaking_offset(args.file, avfuck_dir=avfuck_dir, coversize=coversize,
+                                                            offset=offset, step=err, precision=aprecision)
 
-  for offset in breaking_offsets:
-    print("[*] Modifing offset %d - %d breaks the signature" % (offset, offset + coversize))
-    should_dump = query_yes_no("Do you want to dump the contents at that range?", default="yes")
-    if should_dump:
-      tools.print_dump(tools.dump(args.file, start=offset, end=offset+precision))
+    for offset in breaking_offsets:
+      print("%s[*] Modifing offset %d - %d breaks the signature%s" % (colors.OKBLUE, offset, offset + coversize, colors.ENDC))
+      should_dump = query_yes_no("Do you want to dump the contents at that range?", default="yes")
+      if should_dump:
+        print('')
+        tools.print_dump(tools.dump(args.file, start=offset, end=offset+precision), addr=offset)
+        print('')
+  except KeyboardInterrupt:
+    pass
+  finally:
+    # Clean before exiting
+    if os.path.isdir(dsplit_dir): shutil.rmtree(dsplit_dir)
+    if os.path.isdir(avfuck_dir): shutil.rmtree(avfuck_dir)
 
