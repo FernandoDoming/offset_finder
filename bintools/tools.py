@@ -42,12 +42,13 @@ def scan_parts(parts):
   parts_pattern = re.compile('.+(?:part|fuck)(\d+)$')
 
   for part, result in parts.iteritems():
-    if result[0] != 'FOUND': continue
-
     matched = parts_pattern.match(part)
     part_n = int(matched.group(1))
     detected_parts.append(part_n)
-    logging.info("Part %d detected as %s" % (part_n, result[1]))
+    if isinstance(result, list):
+      logging.info("Part %d detected as %s" % (part_n, result[1]))
+    else:
+      logging.info("Part %d detected as %s" % (part_n, result))
 
   return detected_parts
 
@@ -57,6 +58,7 @@ def lowest_detected_part(scans):
     logging.info("%s found %d results" % (engine, len(parts)))
 
     detected_parts = scan_parts(parts)
+    min_part = None
     if not detected_parts:
       logging.warn("No detected parts by %s. Skipping..." % (engine))
       break     # TODO: should be continue
@@ -85,6 +87,7 @@ def find_start_offset(file, precision, step, truncate, dsplit_dir, max_i=float('
     logging.info("Beginning scanning at %s..." % (dsplit_dir))
     scans = multi_av.scan(dsplit_dir, multiav.core.AV_SPEED_MEDIUM)
     part  = lowest_detected_part(scans)
+    if part is None: break
     offset = starting_offset + part * step
     #logging.info("Signature for %s starts at offset %d - %d, error: %d"
     #             % (engine, offset, offset + step, step))

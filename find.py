@@ -98,9 +98,9 @@ if __name__ == "__main__":
     coversize = aprecision
     logging.info("Starting AvFucker method. Offset: %d, Coversize: %d"
                  % (offset, coversize))
-    breaking_offsets, precision =
-      tools.find_breaking_offset(args.file, avfuck_dir=avfuck_dir, coversize=coversize,
-                                 offset=offset, step=err, precision=aprecision)
+    breaking_offsets, precision = tools.find_breaking_offset(args.file, 
+				     avfuck_dir=avfuck_dir, coversize=coversize,
+                                     offset=offset, step=err, precision=aprecision)
 
     for offset in breaking_offsets:
       print("%s[*] Modifing offset %d - %d breaks the signature%s"
