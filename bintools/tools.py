@@ -97,7 +97,6 @@ def find_start_offset(file, precision, step, truncate, dsplit_dir, max_i=float('
 
     logging.info("Beginning scanning at %s..." % (dsplit_dir))
     scans = multi_av.scan(dsplit_dir, multiav.core.AV_SPEED_MEDIUM)
-    import code; code.interact(local=dict(globals(), **locals()))
     part  = lowest_detected_part(scans)
     if part is None:
       offset = None
