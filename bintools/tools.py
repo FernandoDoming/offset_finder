@@ -54,6 +54,15 @@ def scan_parts(parts):
   return detected_parts
 
 
+def is_detected(f):
+  is_detected = False
+  report = multi_av.scan(f, multiav.core.AV_SPEED_ALL)
+  for engine, malware in report.iteritems():
+    if malware:
+      is_detected = True
+      break    # If it is reported as malware break and return True
+  return is_detected
+
 def lowest_detected_part(scans):
   for engine, parts in scans.iteritems():
     logging.info("%s found %d results" % (engine, len(parts)))
@@ -75,7 +84,8 @@ def find_start_offset(file, precision, step, truncate, dsplit_dir, max_i=float('
   # Dsplit iterations to obtain signature start offset
   offset = 0; limit = None; i = 0
   while True:
-    logging.info("DSPLIT: Beginning iteration %d. Offset: %d B, step: %d B" % (i, offset, step))
+    logging.info("DSPLIT: Beginning iteration %d. Offset: %d B, step: %d B"
+                 % (i, offset, step))
     if truncate: starting_offset = offset
     else: starting_offset = 0
 
@@ -87,8 +97,11 @@ def find_start_offset(file, precision, step, truncate, dsplit_dir, max_i=float('
 
     logging.info("Beginning scanning at %s..." % (dsplit_dir))
     scans = multi_av.scan(dsplit_dir, multiav.core.AV_SPEED_MEDIUM)
+    import code; code.interact(local=dict(globals(), **locals()))
     part  = lowest_detected_part(scans)
-    if part is None: break
+    if part is None:
+      offset = None
+      break
     offset = starting_offset + part * step
     #logging.info("Signature for %s starts at offset %d - %d, error: %d"
     #             % (engine, offset, offset + step, step))
