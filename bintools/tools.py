@@ -44,12 +44,16 @@ def scan_parts(parts):
 
   for part, result in parts.iteritems():
     matched = parts_pattern.match(part)
-    part_n = int(matched.group(1))
-    detected_parts.append(part_n)
-    if isinstance(result, list):
-      logging.info("Part %d detected as %s" % (part_n, result[1]))
-    else:
-      logging.info("Part %d detected as %s" % (part_n, result))
+    try:
+      part_n = int(matched.group(1))
+      detected_parts.append(part_n)
+
+      if isinstance(result, list):
+        logging.info("Part %d detected as %s" % (part_n, result[1]))
+      else:
+        logging.info("Part %d detected as %s" % (part_n, result))
+    except AttributeError:
+      logging.error("Could not parse %s" % (part))
 
   return detected_parts
 
@@ -110,7 +114,7 @@ def find_start_offset(file, precision, step, truncate, dsplit_dir, max_i=float('
       logging.warn("Reached maximum iterations (%d). Breaking..." % (max_i))
       break
 
-    if precision > step: break
+    if precision >= step: break
     step /= 2
     i    += 1
   return offset, step

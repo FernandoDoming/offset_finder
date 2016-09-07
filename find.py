@@ -94,6 +94,7 @@ if __name__ == "__main__":
       logging.warn("%s is not detected by any engines. Nothing to do."
                    % (args.file))
     else:
+      # Dsplit
       offset, err = tools.find_start_offset(args.file, precision=dprecision, step=step,
                           truncate=args.truncate, dsplit_dir=dsplit_dir, max_i=max_iter)
 
@@ -102,11 +103,12 @@ if __name__ == "__main__":
               % (colors.OKBLUE, offset, offset + err, err, colors.ENDC))
 
         coversize = aprecision
+        # AvFucker
         logging.info("Starting AvFucker method. Offset: %d, Coversize: %d"
                      % (offset, coversize))
         breaking_offsets, precision = tools.find_breaking_offset(args.file,
-         				       avfuck_dir=avfuck_dir, coversize=coversize,
-                                         offset=offset, step=err, precision=aprecision)
+                    avfuck_dir=avfuck_dir, coversize=coversize,
+                    offset=offset, step=err, precision=aprecision)
 
         for offset in breaking_offsets:
           print("%s[*] Modifing offset %d - %d breaks the signature%s"
