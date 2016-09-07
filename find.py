@@ -109,7 +109,12 @@ if __name__ == "__main__":
                                  default="yes")
       if should_dump:
         print('')
+        tools.print_dump(tools.dump(args.file, start=offset-precision, end=offset),
+                         addr=offset)
         tools.print_dump(tools.dump(args.file, start=offset, end=offset+precision),
+                         addr=offset, color=True)
+        tools.print_dump(tools.dump(args.file, start=offset+precision,
+                                    end=offset+2*precision),
                          addr=offset)
         print('')
   except KeyboardInterrupt:

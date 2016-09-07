@@ -29,11 +29,12 @@ def hexdump(filename, start, end):
   return format(ord(byte), 'x')
 
 
-def print_dump(data, addr=None):
+def print_dump(data, addr=None, color=False):
   shex = ""
   for byte in data:
-    shex += format(ord(byte), 'x') + " "
+    shex += format(ord(byte), '02x') + " "
   if addr: shex = str(addr) + ": " + shex
+  if color: shex = colors.FAIL + shex + colors.ENDC
   print(shex)
 
 
