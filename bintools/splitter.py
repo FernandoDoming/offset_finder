@@ -44,7 +44,8 @@ def dsplit(fromfile, todir=os.getcwd(), offset=0, limit=None, chunksize=1024, fi
         read    += chunksize
     return part_count
 
-def avfuck(fromfile, todir=os.getcwd(), coversize=1024, filling=0x90, offset=0, limit=None, coffset=0):
+def avfuck(fromfile, todir=os.getcwd(), coversize=1024, filling=0x90, offset=0,
+           limit=None, coffset=0, max_parts=float('inf')):
     """
     Covers sections of a file using the AVfuck method
 
@@ -64,19 +65,19 @@ def avfuck(fromfile, todir=os.getcwd(), coversize=1024, filling=0x90, offset=0, 
     filesize = os.path.getsize(fromfile)
     if coversize > limit and limit is not None: coversize = limit
     max_size = limit or filesize - offset
-    part_count = int(math.ceil((max_size - coffset) / coversize))
+    part_count = min(max_parts, int(math.ceil((max_size - coffset) / coversize)))
 
     logging.info("%savfucker:%s %d parts will be generated in %s" %
         (colors.OKGREEN, colors.ENDC, part_count, todir))
 
     cont = True; partnum = 0; read = max_size
-    while coffset < max_size:
+    while coffset < max_size and partnum < max_parts:
         tofile = os.path.join(todir, ('%s.fuck%d' % (original_file, partnum)))
         __read_write_block(fromfile, size=read, tofile=tofile, offset=offset)
         __cover_block(tofile, size=coversize, offset=coffset, filling=filling)
         coffset += coversize
         partnum += 1
-    return part_count
+    return partnum
 
 #### Private methods
 

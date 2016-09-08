@@ -62,11 +62,15 @@ def get_args():
                            "(default 10)")
   parser.add_argument("-v", "--verbose", action='store_true',
                       help="Verbose output")
-  parser.add_argument("-t", "--truncate", action='store_true',
-                      help="Truncate instead of filling with zeros. " +
+  parser.add_argument("-nt", "--notrunc", action='store_true',
+                      help="Fill with zeros instead of truncating " +
                            "Filling with zeros usually works better " +
-                           "but uses more space")
+                           "but uses more space and time")
   return parser.parse_args()
+
+def clean():
+  if os.path.isdir(dsplit_dir): shutil.rmtree(dsplit_dir)
+  if os.path.isdir(avfuck_dir): shutil.rmtree(avfuck_dir)
 
 ################   main   ################
 
@@ -96,19 +100,19 @@ if __name__ == "__main__":
     else:
       # Dsplit
       offset, err = tools.find_start_offset(args.file, precision=dprecision, step=step,
-                          truncate=args.truncate, dsplit_dir=dsplit_dir, max_i=max_iter)
+                          truncate=not args.notrunc, dsplit_dir=dsplit_dir, max_i=max_iter)
 
       if offset is not None:
         print("%s[*] Signature start located to offset %d - %d, error: %d%s"
               % (colors.OKBLUE, offset, offset + err, err, colors.ENDC))
-
+        clean()
         coversize = aprecision
         # AvFucker
         logging.info("Starting AvFucker method. Offset: %d, Coversize: %d"
                      % (offset, coversize))
         breaking_offsets, precision = tools.find_breaking_offset(args.file,
-                    avfuck_dir=avfuck_dir, coversize=coversize,
-                    offset=offset, step=err, precision=aprecision)
+                    avfuck_dir=avfuck_dir, coversize=coversize, truncate=not args.notrunc,
+                    offset=offset, step=err, precision=aprecision, max_parts=err/coversize)
 
         for offset in breaking_offsets:
           print("%s[*] Modifing offset %d - %d breaks the signature%s"
@@ -122,14 +126,12 @@ if __name__ == "__main__":
             tools.print_dump(tools.dump(args.file, start=offset, end=offset+precision),
                              addr=offset, color=True)
             tools.print_dump(tools.dump(args.file, start=offset+precision,
-                                        end=offset+2*precisio,
-                             addr=offset))
+                                        end=offset+2*precision), addr=offset)
             print('')
   except KeyboardInterrupt:
     pass
   finally:
     # Clean before exiting
     logging.info('Cleaning & exiting')
-    if os.path.isdir(dsplit_dir): shutil.rmtree(dsplit_dir)
-    if os.path.isdir(avfuck_dir): shutil.rmtree(avfuck_dir)
+    clean()
 

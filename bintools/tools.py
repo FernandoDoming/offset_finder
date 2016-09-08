@@ -67,6 +67,7 @@ def is_detected(f):
       break    # If it is reported as malware break and return True
   return is_detected
 
+
 def lowest_detected_part(scans):
   for engine, parts in scans.iteritems():
     logging.info("%s found %d results" % (engine, len(parts)))
@@ -120,10 +121,15 @@ def find_start_offset(file, precision, step, truncate, dsplit_dir, max_i=float('
   return offset, step
 
 
-def find_breaking_offset(file, avfuck_dir, coversize, offset, step, precision):
+def find_breaking_offset(file, avfuck_dir, coversize, offset, step, precision,
+                         truncate, max_parts=float('inf')):
   offsets = []
+  if truncate: limit = offset + step * 2
+  else: limit = None
+
   while True:
-    total_parts = splitter.avfuck(file, todir=avfuck_dir, coversize=coversize, coffset=offset, limit=offset+step*2)
+    total_parts = splitter.avfuck(file, todir=avfuck_dir, coversize=coversize, coffset=offset,
+                                  limit=limit, max_parts=max_parts)
     scans = multi_av.scan(avfuck_dir, multiav.core.AV_SPEED_MEDIUM)
 
     for engine, parts in scans.iteritems():
